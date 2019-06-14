@@ -1,25 +1,563 @@
-<!DOCTYPE html>
-<html lang="en">
+<html><head><title>一、第三方登录原理</title><style>
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Hello</title>
-</head>
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
 
-<body>
-  <p>
-    xmm：
-    <img src="1.jpg" width="500" height="500" />
-  </p>
-</body>
-<script>
-const query = window.location.search.substring(1) || '';
-const name = query.split('name=')[1];
-document.body.appendChild(
-  document.createTextNode(`Welcome, ${decodeURIComponent(name)}`)
-);
-</script>
+body {
+	line-height: 1.5;
+}
 
-</html>
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.column-list {
+	display: flex;
+	justify-content: space-between;
+}
+
+.column {
+	padding: 0 1em;
+}
+
+.column:first-child {
+	padding-left: 0;
+}
+
+.column:last-child {
+	padding-right: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	text-indent: -1.7em;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-block;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1.25em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	opacity: 0.5;
+}
+
+.sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, KaiTi, STKaiTi, '华文楷体', KaiTi_GB2312, '楷体_GB2312', serif; }
+.mono { font-family: Nitti, 'Microsoft YaHei', '微软雅黑', monospace; }
+.pdf .sans { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .code { font-family: Source Code Pro, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, KaiTi, STKaiTi, '华文楷体', KaiTi_GB2312, '楷体_GB2312', serif, 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC', 'Noto Sans CJK KR'; }
+
+.pdf .mono { font-family: PT Mono, Nitti, 'Microsoft YaHei', '微软雅黑', monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC', 'Noto Sans Mono CJK KR'; }
+
+.highlight-default {
+}
+.highlight-gray {
+	color: rgb(155,154,151);
+}
+.highlight-brown {
+	color: rgb(100,71,58);
+}
+.highlight-orange {
+	color: rgb(217,115,13);
+}
+.highlight-yellow {
+	color: rgb(223,171,1);
+}
+.highlight-teal {
+	color: rgb(15,123,108);
+}
+.highlight-blue {
+	color: rgb(11,110,153);
+}
+.highlight-purple {
+	color: rgb(105,64,165);
+}
+.highlight-pink {
+	color: rgb(173,26,114);
+}
+.highlight-red {
+	color: rgb(224,62,62);
+}
+.highlight-gray_background {
+	background: rgb(235,236,237);
+}
+.highlight-brown_background {
+	background: rgb(233,229,227);
+}
+.highlight-orange_background {
+	background: rgb(250,235,221);
+}
+.highlight-yellow_background {
+	background: rgb(251,243,219);
+}
+.highlight-teal_background {
+	background: rgb(221,237,234);
+}
+.highlight-blue_background {
+	background: rgb(221,235,241);
+}
+.highlight-purple_background {
+	background: rgb(234,228,242);
+}
+.highlight-pink_background {
+	background: rgb(244,223,235);
+}
+.highlight-red_background {
+	background: rgb(251,228,228);
+}
+.block-color-default {
+}
+.block-color-gray {
+	color: rgba(55, 53, 47, 0.6);
+}
+.block-color-brown {
+	color: rgb(100,71,58);
+}
+.block-color-orange {
+	color: rgb(217,115,13);
+}
+.block-color-yellow {
+	color: rgb(223,171,1);
+}
+.block-color-teal {
+	color: rgb(15,123,108);
+}
+.block-color-blue {
+	color: rgb(11,110,153);
+}
+.block-color-purple {
+	color: rgb(105,64,165);
+}
+.block-color-pink {
+	color: rgb(173,26,114);
+}
+.block-color-red {
+	color: rgb(224,62,62);
+}
+.block-color-gray_background {
+	background: rgb(235,236,237);
+}
+.block-color-brown_background {
+	background: rgb(233,229,227);
+}
+.block-color-orange_background {
+	background: rgb(250,235,221);
+}
+.block-color-yellow_background {
+	background: rgb(251,243,219);
+}
+.block-color-teal_background {
+	background: rgb(221,237,234);
+}
+.block-color-blue_background {
+	background: rgb(221,235,241);
+}
+.block-color-purple_background {
+	background: rgb(234,228,242);
+}
+.block-color-pink_background {
+	background: rgb(244,223,235);
+}
+.block-color-red_background {
+	background: rgb(251,228,228);
+}
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+</style></head><body><article id="501fa85f-35a8-4452-9e89-2e50e7c1a2fe" class="page sans"><header><h1 class="page-title">一、第三方登录原理</h1></header><div class="page-body"><p id="8f541f49-e3a4-4c0b-950d-0a917df5eb3c">所谓第三方登录，实质就是 OAuth 授权。用户想要登录 A 网站，A 网站让用户提供第三方网站的数据，证明自己的身份。获取第三方网站的身份数据，就需要 OAuth 授权。</p><p id="3525c997-095b-4209-ad30-07013f419d72">举例来说，A 网站允许 GitHub 登录，背后就是下面的流程。</p><pre id="206c29be-e4e1-4a9c-9dc5-0798d45403b7" class="code"><code>A 网站让用户跳转到 GitHub。
+GitHub 要求用户登录，然后询问&quot;A 网站要求获得 xx 权限，你是否同意？&quot;
+用户同意，GitHub 就会重定向回 A 网站，同时发回一个授权码。
+A 网站使用授权码，向 GitHub 请求令牌。
+GitHub 返回令牌.
+A 网站使用令牌，向 GitHub 请求用户数据。</code></pre><p id="4e674226-41bd-4a3d-b424-84df5a3c2ddf">下面就是这个流程的代码实现。</p><p id="0aeb30dc-660b-4c5a-8a54-a74df306315c"></p><h2 id="46d822b3-e863-4de9-b5aa-f606a6457393">二、应用登记</h2><p id="47324a00-d4e5-47fe-bb85-2dc6fb722cdf"></p><p id="05d773d2-5823-4dbd-a3b0-47d297d5533f">一个应用要求 OAuth 授权，必须先到对方网站登记，让对方知道是谁在请求。</p><p id="d9c72d07-7625-459e-a889-bcef5b9e2428">所以，你要先去 GitHub 登记一下。当然，我已经登记过了，你使用我的登记信息也可以，但为了完整走一遍流程，还是建议大家自己登记。这是免费的。</p><p id="643c1425-731b-429c-878b-413529243aa8">访问这个<a href="https://github.com/settings/applications/new">网址</a>，填写登记表。</p><figure id="ee584add-128a-4d89-ac2c-d5d1efc47068" class="image"><a href="Untitled/bg2019042102.jpg"><img style="width:500px" src="welcome/bg2019042102.jpg"/></a></figure><p id="fef19c7f-f247-4481-a31a-cbee95619388">应用的名称随便填，主页 URL 填写http://localhost:8080，跳转网址填写 <a href="http://localhost:8080/oauth/redirect">http://localhost:8080/oauth/redirect</a></p><p id="9d26780b-6c0f-4e67-baf9-905b831ecd0f">提交表单以后，GitHub 应该会返回客户端 ID（client ID）和客户端密钥（client secret），这就是应用的身份识别码。</p><p id="a7fbb13b-6f11-4590-8c5b-49f52e7257a9"></p><h2 id="35feac4a-0d1d-4922-8627-62eada572c2e">三、示例仓库</h2><p id="672cc76e-f1a5-4dc7-916e-a634e0f3c68e">我写了一个代码仓库，请将它克隆到本地</p><pre id="e4ec6640-614c-4d6c-8bc8-6076034bafa9" class="code"><code>$ git clone <a href="mailto:git@github.com">git@github.com</a>:ruanyf/node-oauth-demo.git
+$ cd node-oauth-demo</code></pre><p id="85c175b1-72c8-44f6-82bf-ceaf2cd5b748">两个配置项要改一下，写入上一步的身份识别码</p><pre id="324dfead-9157-4393-90a9-d5d160b4eac0" class="code"><code>index.js：改掉变量clientID and clientSecret
+public/index.html：改掉变量client_id</code></pre><p id="f37c1487-b440-4feb-bc23-3588d7fb5429">然后，安装依赖。</p><pre id="7c0915fd-72e9-4013-ab20-6bf1b033d7b7" class="code"><code>npm install</code></pre><p id="74c05ee0-b626-4586-9423-f55e60cd365a">启动服务</p><pre id="f2f25093-259a-41d5-9243-7f01f5f68e8b" class="code"><code>$ node index.js</code></pre><p id="8910968d-90bf-415a-9cc7-dd40e73137a4">浏览器访问http://localhost:8080，就可以看到这个示例了。</p><p id="8b5e0915-6ef9-4046-a368-e9ecf61631f0"></p><h2 id="f5dbf9f9-0dc3-4a30-aa24-87c7d8ee0436">四、浏览器跳转 GitHub</h2><p id="5f1e3223-e482-434b-80b4-58e415aa3da2">示例的首页很简单，就是一个链接，让用户跳转到 GitHub。</p><figure id="411be6ec-0dd4-48ed-bfbd-a8d9ec0649ca" class="image"><a href="Untitled/bg2019042103.jpg"><img style="width:329px" src="welcome/bg2019042103.jpg"/></a></figure><p id="c50c6b89-7cd2-46c7-83d4-b85f2e4ae2bf">跳转的 URL 如下。</p><blockquote id="9e15baff-a466-4580-b074-82741757469d"><a href="https://github.com/login/oauth/authorize">https://github.com/login/oauth/authorize</a>?
+client_id=7e015d8ce32370079895&amp;
+redirect_uri=http://localhost:8080/oauth/redirect</blockquote><p id="54d2e120-681a-4754-8b05-a9216f950a31"></p><p id="50dfe734-bab6-426f-9872-353b5dcc349f">这个 URL 指向 GitHub 的 OAuth 授权网址，带有两个参数：<code>client_id</code>告诉 GitHub 谁在请求，<code>redirect_uri</code>是稍后跳转回来的网址。</p><p id="b295b079-f892-4ca7-b21b-0e51edf38df8">用户点击到了 GitHub，GitHub 会要求用户登录，确保是本人在操作。</p><p id="7d3dd42d-ea05-40fe-ad85-be8589fa3015"></p><h2 id="bce5b66c-f40e-4a82-b447-1e59a10c7622">五、授权码</h2><p id="5430d43e-35a4-4f18-8e0a-628dcfc793f1">登录后，GitHub 询问用户，该应用正在请求数据，你是否同意授权。</p><figure id="64a5cba8-3193-4d13-be37-7a5d79507052" class="image"><a href="Untitled/bg2019042104.png"><img style="width:535px" src="welcome/bg2019042104.png"/></a></figure><p id="0d310b4e-e3ed-44c3-977a-9848b1f3e739">用户同意授权， GitHub 就会跳转到redirect_uri指定的跳转网址，并且带上授权码，跳转回来的 URL 就是下面的样子。</p><pre id="e7a8a58f-a3cf-440c-ae56-ab09ff0b4199" class="code"><code><em><a href="http://localhost:8080/oauth/redirect">http://localhost:8080/oauth/redirect</a></em><em>?
+code=859310e7cecc9196f4af</em></code></pre><p id="68304e01-4581-4682-a5d6-889e24ccfc4f">后端收到这个请求以后，就拿到了授权码（code参数）。</p><p id="17075eb3-328d-4750-bae8-2242829e7b4c"></p><h2 id="197f9a83-2e2f-4c89-a561-86b4b963720a">六、后端实现</h2><p id="fcf9ba72-00df-4f23-89ec-3f93fbbebca5"></p><p id="ec66ca47-02e7-4951-a347-37376946aabe">示例的<a href="https://github.com/ruanyf/node-oauth-demo/blob/master/index.js">后端</a>采用 Koa 框架编写，具体语法请看<a href="http://www.ruanyifeng.com/blog/2017/08/koa.html">教程</a>。</p><p id="aa5febc3-e3d6-48c1-8ade-d989d745adf1">这里的关键是针对<code>/oauth/redirect</code>的请求，编写一个<a href="https://github.com/ruanyf/node-oauth-demo/blob/master/index.js#L16">路由</a>，完成 OAuth 认证。</p><pre id="c58c97eb-587f-442a-ac29-b1fd79a9e4a6" class="code"><code><em>const oauth = async ctx =&gt; {
+// ...
+};
+app.use(route.get(&#x27;/oauth/redirect&#x27;, oauth));</em></code></pre><p id="66051f9f-a36c-4109-8c2f-c0d426f79ea2"></p><p id="e2625ad8-3c94-4d4c-bbb8-0c78fc038fba"></p><p id="08ec1f96-ae09-4ee2-878c-4084884329fa">上面代码中，<code>oauth</code>函数就是路由的处理函数。下面的代码都写在这个函数里面。</p><p id="fdeaef35-dded-4026-934a-92e3ed5bf927">路由函数的第一件事，是从 URL 取出授权码。</p><pre id="9aac50bb-d870-49d1-8d48-3b19adfe373b" class="code"><code>const requestToken = ctx.request.query.code;</code></pre><p id="cd70f2d9-870a-4184-9b3f-81108a2edf23"></p><h2 id="0f455471-1a56-4cb6-ad0d-d8c0800fd8d3">七、令牌</h2><p id="e1c747bd-c88c-4387-bdf9-f381eaf57971">后端使用这个授权码，向 GitHub 请求令牌。</p><pre id="1a317bdf-c205-4581-a03d-15d379cc71d6" class="code"><code>const tokenResponse = await axios({
+method: &#x27;post&#x27;,
+url: &#x27;<a href="https://github.com/login/oauth/access_token?%27">https://github.com/login/oauth/access_token?&#x27;</a> +
+<code>client_id=${clientID}&amp;</code> +
+<code>client_secret=${clientSecret}&amp;</code> +
+<code>code=${requestToken}</code>,
+headers: {
+accept: &#x27;application/json&#x27;
+}
+});</code></pre><p id="e0228fa4-261c-404b-9c53-fbf90c5fdb65">上面代码中，GitHub 的令牌接口https://github.com/login/oauth/access_token需要提供三个参数。</p><pre id="b336602f-8c47-4f8e-884a-a99bb720c0dd" class="code"><code>client_id：客户端的 ID
+client_secret：客户端的密钥
+code：授权码</code></pre><p id="7879a1ab-ecf3-4e14-908a-f839f9e3bd99">作为回应，GitHub 会返回一段 JSON 数据，里面包含了令牌accessToken。</p><pre id="a5190ace-4ee9-47d7-a33f-6c534ce56053" class="code"><code>const accessToken = tokenResponse.data.access_token;</code></pre><p id="a5384130-b46f-4f0e-9f23-8d52fd5b0245"></p><h2 id="40ce6ff8-ae6d-4b4d-8b02-eac5821d8244">八、API 数据</h2><p id="347f88bb-a291-4da8-808d-e26390f1c91d">有了令牌以后，就可以向 API 请求数据了。</p><pre id="bd3ebd20-b749-4d1b-90b9-8d80571bac85" class="code"><code>const result = await axios({
+method: &#x27;get&#x27;,
+url: <code>https://api.github.com/user</code>,
+headers: {
+accept: &#x27;application/json&#x27;,
+Authorization: <code>token ${accessToken}</code>
+}
+});</code></pre><p id="0034da15-5916-4624-a338-eac04e011c9f"></p><p id="287d109e-e8b3-453c-8513-70fcaa9930cc">上面代码中，GitHub API 的地址是<code>https://api.github.com/user</code>，请求的时候必须在 HTTP 头信息里面带上令牌<code>Authorization: token 361507da</code>。</p><p id="da28a0a6-ec6e-4e4a-a5c4-18224d4e5949">然后，就可以拿到用户数据，得到用户的身份。</p><pre id="89358b7f-deef-448e-9e05-efa33473faf0" class="code"><code>const name = <a href="http://result.data.name/">result.data.name</a>;
+ctx.response.redirect(<code>/welcome.html?name=${name}</code>);</code></pre><p id="d8f84525-1d66-4dda-84e7-299fcd3dbe5a"></p></div></article></body></html>
